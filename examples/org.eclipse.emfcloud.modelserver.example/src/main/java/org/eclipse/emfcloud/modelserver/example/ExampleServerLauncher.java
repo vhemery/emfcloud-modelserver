@@ -13,15 +13,21 @@ package org.eclipse.emfcloud.modelserver.example;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
+import org.eclipse.emfcloud.modelserver.common.Routing;
 import org.eclipse.emfcloud.modelserver.emf.launch.CLIParser;
 import org.eclipse.emfcloud.modelserver.emf.launch.ModelServerLauncher;
 import org.eclipse.emfcloud.modelserver.example.util.ResourceUtil;
 
 import com.google.common.collect.Lists;
+import com.google.inject.AbstractModule;
+import com.google.inject.Module;
+import com.google.inject.Singleton;
+import com.google.inject.multibindings.Multibinder;
 
 public final class ExampleServerLauncher {
    private static String TEMP_DIR = ".temp";
@@ -48,6 +54,7 @@ public final class ExampleServerLauncher {
 
    private ExampleServerLauncher() {}
 
+   @SuppressWarnings("unchecked")
    public static void main(String[] args) throws ParseException {
       ModelServerLauncher.configureLogger();
       CLIParser.create(args, CLIParser.getDefaultCLIOptions(), PROCESS_NAME);
@@ -75,6 +82,7 @@ public final class ExampleServerLauncher {
 
       final ModelServerLauncher launcher = new ModelServerLauncher(args);
       launcher.addEPackageConfigurations(Lists.newArrayList(CoffeePackageConfiguration.class));
+      ((Collection<Module>) launcher.getModules()).add(new CustomExtensionModule());
       launcher.start();
    }
 
@@ -128,4 +136,12 @@ public final class ExampleServerLauncher {
       }
    }
 
+   private static final class CustomExtensionModule extends AbstractModule {
+      @Override
+      protected void configure() {
+         Multibinder.newSetBinder(binder(), Routing.class).addBinding()
+            .to(CustomRouting.class)
+            .in(Singleton.class);
+      }
+   }
 }
